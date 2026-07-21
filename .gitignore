@@ -1,0 +1,12 @@
+.idea/
+.vscode/
+.vs/
+*.user
+*.suo
+
+bin/
+obj/
+/Assemblies/
+/artifacts/
+__pycache__/
+*.py[cod]

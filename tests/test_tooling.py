@@ -1,0 +1,364 @@
+"""Exercise generic contracts without requiring RimWorld, .NET, or a network."""
+
+from __future__ import annotations
+
+import importlib.util
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS = REPO_ROOT / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+from project import ProjectError, load_project  # noqa: E402
+
+
+def script_module(name: str, filename: str):
+    """Load command scripts whose hyphenated filenames are not import names."""
+
+    spec = importlib.util.spec_from_file_location(name, SCRIPTS / filename)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+validator = script_module("validate_package", "validate-package.py")
+ValidationError = validator.ValidationError
+validate = validator.validate
+source_validator = script_module("validate_source", "validate-source.py")
+SourceError = source_validator.SourceError
+
+
+class PackageFixture:
+    """Create one minimal package whose mutations isolate validator failures."""
+
+    def __init__(self, root: Path) -> None:
+        self.package = root / "FixtureMod"
+        (self.package / "About").mkdir(parents=True)
+        (self.package / "Defs").mkdir()
+        (self.package / "Languages" / "English" / "Keyed").mkdir(parents=True)
+        (self.package / "About" / "About.xml").write_text(
+            """<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Fixture Mod</name>
+  <author>Sanicek</author>
+  <packageId>FixtureAuthor.FixtureMod</packageId>
+  <modVersion>0.1.0</modVersion>
+  <url>https://example.invalid/mod</url>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <description>Fixture package.</description>
+</ModMetaData>
+""",
+            encoding="utf-8",
+        )
+        (self.package / "LoadFolders.xml").write_text(
+            """<?xml version="1.0" encoding="utf-8"?>
+<loadFolders><v1.6><li>/</li></v1.6></loadFolders>
+""",
+            encoding="utf-8",
+        )
+        (self.package / "Defs" / "Example.xml").write_text("<Defs />\n", encoding="utf-8")
+        (self.package / "Languages" / "English" / "Keyed" / "Example.xml").write_text(
+            "<LanguageData><Example_Key>Hello {0}</Example_Key></LanguageData>\n",
+            encoding="utf-8",
+        )
+
+
+class ProjectTests(unittest.TestCase):
+    def test_project_metadata_is_valid(self) -> None:
+        project = load_project(REPO_ROOT / "About" / "About.xml")
+        self.assertEqual(project.package_name, "SmallCELoadingBench")
+        self.assertEqual(project.version, "0.1.0")
+        self.assertEqual(project.supported_versions, ("1.6",))
+
+    def test_prerelease_version_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            metadata = Path(temporary) / "About.xml"
+            text = (REPO_ROOT / "About" / "About.xml").read_text(encoding="utf-8")
+            metadata.write_text(text.replace("0.1.0", "0.1.0-rc.1"), encoding="utf-8")
+            with self.assertRaisesRegex(ProjectError, "MAJOR.MINOR.PATCH"):
+                load_project(metadata)
+
+    def test_internal_artifact_name_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            metadata = Path(temporary) / "About.xml"
+            text = (REPO_ROOT / "About" / "About.xml").read_text(encoding="utf-8")
+            metadata.write_text(text.replace("Sanicek.SmallCELoadingBench", "Sanicek.ReLeAsEs"), encoding="utf-8")
+            with self.assertRaisesRegex(ProjectError, "reserved"):
+                load_project(metadata)
+
+
+class ValidatorTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.fixture = PackageFixture(Path(self.temporary.name))
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def test_valid_xml_package_without_workshop_id(self) -> None:
+        project = validate(self.fixture.package)
+        self.assertEqual(project.package_id, "FixtureAuthor.FixtureMod")
+
+    def test_valid_published_workshop_id(self) -> None:
+        (self.fixture.package / "About" / "PublishedFileId.txt").write_text("123456789\n", encoding="ascii")
+        validate(self.fixture.package)
+
+    def test_invalid_workshop_id_is_rejected(self) -> None:
+        (self.fixture.package / "About" / "PublishedFileId.txt").write_text("TEMPLATE\n", encoding="ascii")
+        with self.assertRaisesRegex(ValidationError, "positive numeric"):
+            validate(self.fixture.package)
+
+    def test_unexpected_package_content_is_rejected(self) -> None:
+        (self.fixture.package / "Source").mkdir()
+        with self.assertRaisesRegex(ValidationError, "unexpected top-level directory"):
+            validate(self.fixture.package)
+
+    def test_symlink_is_rejected(self) -> None:
+        (self.fixture.package / "Defs" / "Link.xml").symlink_to(self.fixture.package / "Defs" / "Example.xml")
+        with self.assertRaisesRegex(ValidationError, "symlinks"):
+            validate(self.fixture.package)
+
+    def test_translation_placeholder_drift_is_rejected(self) -> None:
+        french = self.fixture.package / "Languages" / "French" / "Keyed"
+        french.mkdir(parents=True)
+        (french / "Example.xml").write_text(
+            "<LanguageData><Example_Key>Bonjour {1}</Example_Key></LanguageData>\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValidationError, "placeholders differ"):
+            validate(self.fixture.package)
+
+    def test_versioned_assembly_requires_load_mapping(self) -> None:
+        assemblies = self.fixture.package / "1.6" / "Assemblies"
+        assemblies.mkdir(parents=True)
+        (assemblies / "FixtureMod.dll").write_bytes(b"fixture")
+        with self.assertRaisesRegex(ValidationError, "must load '1.6'"):
+            validate(self.fixture.package)
+
+    def test_windows_style_load_folder_traversal_is_rejected(self) -> None:
+        (self.fixture.package / "LoadFolders.xml").write_text(
+            "<loadFolders><v1.6><li>/</li><li>1.6\\..\\..\\OtherMod</li></v1.6></loadFolders>\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValidationError, "unsafe load folder"):
+            validate(self.fixture.package)
+
+    def test_duplicate_key_across_catalogs_is_rejected(self) -> None:
+        (self.fixture.package / "Languages" / "English" / "Keyed" / "Other.xml").write_text(
+            "<LanguageData><Example_Key>Again {0}</Example_Key></LanguageData>\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValidationError, "across catalogs"):
+            validate(self.fixture.package)
+
+    def test_uppercase_xml_extension_is_parsed(self) -> None:
+        (self.fixture.package / "Defs" / "Broken.XML").write_text("<Defs>", encoding="utf-8")
+        with self.assertRaisesRegex(ValidationError, "invalid XML"):
+            validate(self.fixture.package)
+
+    def test_uppercase_keyed_catalog_checks_duplicates(self) -> None:
+        (self.fixture.package / "Languages" / "English" / "Keyed" / "Other.XML").write_text(
+            "<LanguageData><Example_Key>Again {0}</Example_Key></LanguageData>\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValidationError, "across catalogs"):
+            validate(self.fixture.package)
+
+
+class ReleaseArchiveTests(unittest.TestCase):
+    def test_archive_bytes_are_deterministic(self) -> None:
+        module = script_module("package_release", "package-release.py")
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = PackageFixture(Path(temporary))
+            first = Path(temporary) / "first.zip"
+            second = Path(temporary) / "second.zip"
+            module.write_archive(fixture.package, first)
+            module.write_archive(fixture.package, second)
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            with zipfile.ZipFile(first) as archive:
+                self.assertIsNone(archive.testzip())
+                self.assertIn("FixtureMod/About/About.xml", archive.namelist())
+
+    def test_archive_rejects_symlinks(self) -> None:
+        module = script_module("package_release", "package-release.py")
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = PackageFixture(Path(temporary))
+            (fixture.package / "Defs" / "Link.xml").symlink_to(fixture.package / "Defs" / "Example.xml")
+            with self.assertRaises(SystemExit):
+                module.write_archive(fixture.package, Path(temporary) / "release.zip")
+
+
+class ReleaseExtractionTests(unittest.TestCase):
+    def test_high_ratio_archive_is_rejected_before_extraction(self) -> None:
+        module = __import__("release_archive")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive_path = root / "release.zip"
+            with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("FixtureMod/", b"")
+                archive.writestr("FixtureMod/large.txt", b"0" * 1024 * 1024)
+            destination = root / "destination"
+            destination.mkdir()
+            with self.assertRaises(module.ArchiveError):
+                module.extract_release(archive_path, destination, "FixtureMod")
+            self.assertFalse((destination / "FixtureMod").exists())
+
+
+class ReleaseWorkflowTests(unittest.TestCase):
+    def test_clean_customized_template_builds_release_twice_identically(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary) / "repo"
+            shutil.copytree(
+                REPO_ROOT,
+                repo,
+                ignore=shutil.ignore_patterns(".git", "artifacts", "__pycache__", "*.pyc"),
+            )
+            metadata = repo / "About" / "About.xml"
+            metadata.write_text(
+                metadata.read_text(encoding="utf-8")
+                .replace("Small CE Loading Bench", "Fixture Mod")
+                .replace("SmallCELoadingBench", "FixtureMod")
+                .replace("rw-small-ce-loading-bench", "fixture-mod"),
+                encoding="utf-8",
+            )
+            manifest = repo / "artwork" / "manifest.toml"
+            manifest.write_text(
+                manifest.read_text(encoding="utf-8")
+                .replace("Small CE Loading Bench", "Fixture Mod")
+                .replace("SmallCELoadingBench", "FixtureMod"),
+                encoding="utf-8",
+            )
+            shutil.copyfile(repo / "docs" / "releases" / "EXAMPLE.md", repo / "docs" / "releases" / "0.1.0.md")
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "test fixture"],
+                cwd=repo,
+                check=True,
+            )
+
+            command = [sys.executable, repo / "scripts" / "package-release.py"]
+            subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
+            archive = repo / "artifacts" / "releases" / "FixtureMod-v0.1.0.zip"
+            first = archive.read_bytes()
+            subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
+            self.assertEqual(first, archive.read_bytes())
+            self.assertTrue(archive.with_suffix(".zip.sha256").is_file())
+
+
+class ScaffoldTests(unittest.TestCase):
+    def test_csharp_scaffold_is_complete_and_inactive(self) -> None:
+        project = REPO_ROOT / "scaffolds" / "csharp" / "Source" / "SmallCELoadingBench" / "SmallCELoadingBench.csproj"
+        lockfile = project.with_name("packages.lock.json")
+        self.assertTrue(project.is_file())
+        self.assertTrue(lockfile.is_file())
+        source = REPO_ROOT / "Source"
+        if source.exists():
+            projects = list(source.glob("*/*.csproj"))
+            self.assertEqual(len(projects), 1)
+            self.assertTrue(projects[0].with_name("packages.lock.json").is_file())
+
+
+class SourceTests(unittest.TestCase):
+    def copy_repository(self, destination: Path) -> Path:
+        repo = destination / "repo"
+        shutil.copytree(
+            REPO_ROOT,
+            repo,
+            ignore=shutil.ignore_patterns(".git", "artifacts", "__pycache__", "*.pyc"),
+        )
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+        return repo
+
+    def test_symlinked_artifacts_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            repo = self.copy_repository(root)
+            external = root / "external"
+            external.mkdir()
+            (repo / "artifacts").symlink_to(external, target_is_directory=True)
+            with self.assertRaisesRegex(SourceError, "artifacts must not be a symlink"):
+                source_validator.validate_source(repo)
+
+    def test_package_source_symlink_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            repo = self.copy_repository(root)
+            external = root / "private.txt"
+            external.write_text("private", encoding="utf-8")
+            (repo / "LICENSE").unlink()
+            (repo / "LICENSE").symlink_to(external)
+            with self.assertRaisesRegex(SourceError, "package source may not contain symlinks"):
+                source_validator.validate_source(repo)
+
+    def test_ignored_runtime_file_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self.copy_repository(Path(temporary))
+            ignored = repo / "Textures" / "bin" / "private.dat"
+            ignored.parent.mkdir(parents=True)
+            ignored.write_text("private", encoding="utf-8")
+            with self.assertRaisesRegex(SourceError, "ignored file or directory"):
+                source_validator.validate_source(repo)
+
+    def test_ignored_csharp_input_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self.copy_repository(Path(temporary))
+            source = repo / "Source" / "FixtureMod"
+            source.mkdir(parents=True)
+            hidden_code = source / "LocalOnly.cs"
+            hidden_code.write_text("internal class LocalOnly {}\n", encoding="utf-8")
+            (repo / ".git" / "info" / "exclude").write_text("Source/**/*.cs\n", encoding="utf-8")
+            with self.assertRaisesRegex(SourceError, "ignored C# build input"):
+                source_validator.validate_source(repo)
+
+    def test_symlinked_csharp_source_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            repo = self.copy_repository(root)
+            external = root / "external-source"
+            external.mkdir()
+            (repo / "Source").symlink_to(external, target_is_directory=True)
+            with self.assertRaisesRegex(SourceError, "Source must be a real directory"):
+                source_validator.validate_source(repo)
+
+    def test_release_requires_a_version_record(self) -> None:
+        with self.assertRaisesRegex(SourceError, "release record is required"):
+            source_validator.validate_source(REPO_ROOT, release=True)
+
+
+class InstallTests(unittest.TestCase):
+    def test_installer_refuses_unrelated_existing_mod(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            rimworld = Path(temporary) / "RimWorld"
+            target = rimworld / "Mods" / "SmallCELoadingBench"
+            (target / "About").mkdir(parents=True)
+            metadata = (REPO_ROOT / "About" / "About.xml").read_text(encoding="utf-8")
+            (target / "About" / "About.xml").write_text(
+                metadata.replace("Sanicek.SmallCELoadingBench", "AnotherAuthor.SmallCELoadingBench"),
+                encoding="utf-8",
+            )
+            sentinel = target / "sentinel.txt"
+            sentinel.write_text("untouched", encoding="utf-8")
+            result = subprocess.run(
+                [REPO_ROOT / "scripts" / "install-local.sh"],
+                cwd=REPO_ROOT,
+                env={**__import__("os").environ, "RIMWORLD_DIR": str(rimworld)},
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("install target belongs to", result.stderr)
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "untouched")
+
+
+if __name__ == "__main__":
+    unittest.main()

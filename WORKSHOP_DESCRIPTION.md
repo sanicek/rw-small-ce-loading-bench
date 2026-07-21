@@ -1,12 +1,13 @@
 [h1]Small CE Loading Bench[/h1]
 
-Small CE Loading Bench gives Combat Extended's loading bench a compact 2x1
+Small CE Loading Bench gives Combat Extended's loading bench a compact 1x1
 footprint while preserving its normal ammunition recipes and behavior.
 
 [h2]Features[/h2]
 [list]
-[*]Reduces the existing Combat Extended loading bench from 3x1 to 2x1.
+[*]Reduces the existing Combat Extended loading bench from 3x1 to 1x1.
 [*]Preserves existing bench identity, recipes, bills, and research integration.
+[*]Keeps a consistent fixed-perspective graphic while allowing the interaction spot to face any side.
 [/list]
 
 [h2]Requirements[/h2]

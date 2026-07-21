@@ -34,6 +34,8 @@ ValidationError = validator.ValidationError
 validate = validator.validate
 source_validator = script_module("validate_source", "validate-source.py")
 SourceError = source_validator.SourceError
+mod_validator = script_module("validate_mod", "validate-mod.py")
+ModValidationError = mod_validator.ModValidationError
 
 
 class PackageFixture:
@@ -171,6 +173,22 @@ class ValidatorTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValidationError, "across catalogs"):
             validate(self.fixture.package)
+
+
+class ModValidatorTests(unittest.TestCase):
+    def test_maintained_source_has_fixed_1x1_contract(self) -> None:
+        mod_validator.validate_mod(REPO_ROOT)
+
+    def test_missing_recolor_mask_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "Package"
+            shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
+            texture_source = REPO_ROOT / "Textures" / "Things" / "Building" / "SmallCELoadingBench" / "LoadingBench.png"
+            texture_target = package / "Textures" / "Things" / "Building" / "SmallCELoadingBench" / "LoadingBench.png"
+            texture_target.parent.mkdir(parents=True)
+            shutil.copyfile(texture_source, texture_target)
+            with self.assertRaisesRegex(ModValidationError, "required texture"):
+                mod_validator.validate_mod(package)
 
 
 class ReleaseArchiveTests(unittest.TestCase):
@@ -330,11 +348,48 @@ class SourceTests(unittest.TestCase):
                 source_validator.validate_source(repo)
 
     def test_release_requires_a_version_record(self) -> None:
-        with self.assertRaisesRegex(SourceError, "release record is required"):
-            source_validator.validate_source(REPO_ROOT, release=True)
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self.copy_repository(Path(temporary))
+            (repo / "docs" / "releases" / "0.1.0.md").unlink()
+            with self.assertRaisesRegex(SourceError, "release record is required"):
+                source_validator.validate_source(repo, release=True)
+
+    def test_release_record_must_be_tracked(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self.copy_repository(Path(temporary))
+            with self.assertRaisesRegex(SourceError, "release record must be tracked"):
+                source_validator.validate_source(repo, release=True)
 
 
 class InstallTests(unittest.TestCase):
+    def test_installer_stages_a_correctly_named_package(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            repo = root / "repo"
+            shutil.copytree(
+                REPO_ROOT,
+                repo,
+                ignore=shutil.ignore_patterns(".git", "artifacts", "__pycache__", "*.pyc"),
+            )
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            rimworld = root / "RimWorld"
+            (rimworld / "Mods").mkdir(parents=True)
+            (rimworld / "Version.txt").write_text("1.6.4871 rev598\n", encoding="utf-8")
+
+            subprocess.run(
+                [repo / "scripts" / "install-local.sh"],
+                cwd=repo,
+                env={**__import__("os").environ, "RIMWORLD_DIR": str(rimworld)},
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            installed = rimworld / "Mods" / "SmallCELoadingBench"
+            self.assertTrue((installed / "About" / "About.xml").is_file())
+            self.assertFalse(any((rimworld / "Mods").glob(".SmallCELoadingBench.stage.*")))
+
     def test_installer_refuses_unrelated_existing_mod(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             rimworld = Path(temporary) / "RimWorld"

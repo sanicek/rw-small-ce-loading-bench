@@ -29,3 +29,22 @@ The default sibling checkout is `../rw-art-pipeline`; set
 `~/.local/share/rw-art-pipeline/<package-id>` and can be overridden with
 `RW_ART_STATE_DIR`. Scenario credentials come from `SCENARIO_API_KEY` and
 `SCENARIO_API_SECRET` or the mode-0600 credential file created by `auth`.
+
+## Workbench template trial
+
+Phase one uses the exact `generic-workbench-1x1` runtime texture and recolor
+mask introduced by rw-art commit `5b0f4bd5156119d4d42ee223986bfa9880f89901`:
+
+- Texture SHA-256: `c97a8c4684f2aa0107091167a3bb2e44955eba6cffffbd6f7723237449309846`
+- Mask SHA-256: `697218e1916b90e71ecde69a269ca3e35d78307411897a16f30f3ca3943e605c`
+
+Export templates through this repository's wrapper:
+
+```bash
+./scripts/artwork.sh templates export generic-workbench-1x1 rimworld-texture Textures/Things/Building/SmallCELoadingBench/LoadingBench.png
+./scripts/artwork.sh templates export generic-workbench-1x1 rimworld-color-mask Textures/Things/Building/SmallCELoadingBench/LoadingBench_m.png
+```
+
+The base trial is intentionally not a final loading-bench design. In-game
+findings feed back into rw-art's deterministic generator before project-specific
+tools are added to the neutral work surface.

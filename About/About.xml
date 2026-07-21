@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <!-- This metadata is the permanent user-facing identity and dependency contract. -->
+  <name>Small CE Loading Bench</name>
+  <author>Sanicek</author>
+  <packageId>Sanicek.SmallCELoadingBench</packageId>
+  <modVersion>0.1.0</modVersion>
+  <url>https://github.com/sanicek/rw-small-ce-loading-bench</url>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>
+Small CE Loading Bench is planned to reduce Combat Extended's loading bench from a 3x1 footprint to a compact 2x1 footprint while preserving its normal recipes and behavior.
+
+This project is under development and does not yet change gameplay.
+  </description>
+  <loadAfter>
+    <li>Ludeon.RimWorld</li>
+    <li>CETeam.CombatExtended</li>
+  </loadAfter>
+  <modDependencies>
+    <li>
+      <packageId>CETeam.CombatExtended</packageId>
+      <displayName>Combat Extended</displayName>
+      <steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=2890901044</steamWorkshopUrl>
+      <downloadUrl>https://github.com/CombatExtended-Continued/CombatExtended/releases/latest</downloadUrl>
+    </li>
+  </modDependencies>
+</ModMetaData>

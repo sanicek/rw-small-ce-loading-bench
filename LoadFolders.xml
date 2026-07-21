@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<loadFolders>
+  <!-- Root content is sufficient until version-specific XML or C# is added. -->
+  <v1.6>
+    <li>/</li>
+  </v1.6>
+</loadFolders>

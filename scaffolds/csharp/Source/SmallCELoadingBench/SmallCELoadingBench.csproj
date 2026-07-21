@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- RimWorld 1.6 loads .NET Framework 4.7.2 assemblies. -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>SmallCELoadingBench</AssemblyName>
+    <RootNamespace>SmallCELoadingBench</RootNamespace>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>$(ModVersion)</Version>
+    <AssemblyTitle>SmallCELoadingBench</AssemblyTitle>
+    <Description>Small CE Loading Bench for RimWorld</Description>
+    <Company>Sanicek</Company>
+    <Product>SmallCELoadingBench</Product>
+    <Copyright>Copyright © 2026 Sanicek</Copyright>
+    <ComVisible>false</ComVisible>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Deterministic>true</Deterministic>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <!-- Game and Unity assemblies are compile references, never package output. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldManagedDir)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(RimWorldManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(RimWorldManagedDir)/UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(RimWorldManagedDir)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateBuildInputs" BeforeTargets="ResolveReferences;CoreCompile">
+    <Error Condition="'$(ModVersion)' == ''" Text="ModVersion must come from About/About.xml through scripts/build.sh." />
+    <Error Condition="'$(RimWorldManagedDir)' == ''" Text="RimWorldManagedDir must point to RimWorldLinux_Data/Managed." />
+    <Error Condition="!Exists('$(RimWorldManagedDir)/Assembly-CSharp.dll')" Text="Assembly-CSharp.dll was not found in $(RimWorldManagedDir)." />
+  </Target>
+</Project>

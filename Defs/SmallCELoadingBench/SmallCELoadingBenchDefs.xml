@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!--
+  Gameplay content is intentionally absent during bootstrap. Keep future Defs
+  grouped by feature and preserve every published identity.
+  -->
+</Defs>

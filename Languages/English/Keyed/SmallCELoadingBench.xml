@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!-- Prefix keyed translations so they cannot collide with another mod. -->
+  <SmallCELoadingBench_SettingsCategory>Small CE Loading Bench</SmallCELoadingBench_SettingsCategory>
+  <SmallCELoadingBench_EnableExample>Enable example behavior</SmallCELoadingBench_EnableExample>
+</LanguageData>

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "references": {
+    "rimworld": {
+      "path": "~/.local/share/Steam/steamapps/common/RimWorld",
+      "description": "Installed RimWorld game, managed assemblies, Defs, and mod documentation"
+    },
+    "rimworld-config": {
+      "path": "~/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios",
+      "description": "Local RimWorld configuration, logs, and saves"
+    },
+    "combat-extended": {
+      "path": "~/gitproj/public/CombatExtended",
+      "description": "Combat Extended source and mod integration reference"
+    },
+    "harmony-rimworld": {
+      "path": "~/gitproj/public/HarmonyRimWorld",
+      "description": "Harmony for RimWorld source and mod integration reference"
+    },
+    "rw-art-pipeline": {
+      "path": "~/gitproj/personal/rw-art-pipeline",
+      "description": "Shared RimWorld artwork prompt, processing, review, and approval tooling"
+    }
+  },
+  "permission": {
+    "scenario_*": "ask",
+    "scenario_asset_delete": "deny",
+    "scenario_model_delete": "deny",
+    "scenario_workflow_delete": "deny",
+    "scenario_api_key_delete": "deny",
+    "scenario_team_members_remove": "deny",
+    "scenario_project_members_remove": "deny",
+    "external_directory": {
+      "*": "ask",
+      "~/.steam/steam/steamapps/common/RimWorld/**": "allow",
+      "~/.local/share/Steam/steamapps/common/RimWorld/**": "allow",
+      "~/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/**": "allow",
+      "~/gitproj/public/CombatExtended/**": "allow",
+      "~/gitproj/public/HarmonyRimWorld/**": "allow",
+      "~/gitproj/personal/rw-art-pipeline/**": "allow",
+      "~/.local/share/rw-art-pipeline/Sanicek.SmallCELoadingBench/**": "allow"
+    }
+  },
+  "mcp": {
+    "scenario": {
+      "type": "remote",
+      "url": "https://mcp.scenario.com/mcp",
+      "oauth": {}
+    }
+  }
+}

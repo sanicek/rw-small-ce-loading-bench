@@ -92,4 +92,5 @@ done
 validator_args=("$artifact_dir")
 [[ -n "$rimworld_dir" ]] && validator_args+=(--rimworld-dir "$rimworld_dir")
 python3 "$repo_root/scripts/validate-package.py" "${validator_args[@]}"
+python3 "$repo_root/scripts/validate-mod.py" "$artifact_dir"
 printf 'Success: packaged %s %s at %s\n' "$(python3 "$repo_root/scripts/project.py" "$metadata" name)" "$mod_version" "$artifact_dir"

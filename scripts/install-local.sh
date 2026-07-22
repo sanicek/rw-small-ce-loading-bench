@@ -14,6 +14,7 @@ artifact_dir="$repo_root/artifacts/$package_name"
 release_dir="$repo_root/artifacts/releases"
 install_release=false
 stage_dir=""
+stage_parent=""
 release_extract_dir=""
 backup_dir=""
 old_target_moved=false
@@ -38,7 +39,8 @@ cleanup() {
     local status=$?
     trap - EXIT
     set +e
-    [[ -n "$stage_dir" && -d "$stage_dir" ]] && rm -rf -- "$stage_dir"
+    [[ -n "$stage_parent" && -d "$stage_parent" ]] && rm -rf -- "$stage_parent"
+    [[ -z "$stage_parent" && -n "$stage_dir" && -d "$stage_dir" ]] && rm -rf -- "$stage_dir"
     [[ -n "$release_extract_dir" && -d "$release_extract_dir" ]] && rm -rf -- "$release_extract_dir"
     if [[ "$commit_completed" != true ]]; then
         [[ "$new_target_placed" == true && ( -e "$target_dir" || -L "$target_dir" ) ]] && rm -rf -- "$target_dir"
@@ -82,7 +84,9 @@ flock 8
 
 if [[ "$install_release" == false ]]; then
     ARTIFACT_LOCK_HELD=1 "$repo_root/scripts/build.sh"
-    stage_dir="$(mktemp -d -- "$mods_dir/.$package_name.stage.XXXXXX")"
+    stage_parent="$(mktemp -d -- "$mods_dir/.$package_name.stage.XXXXXX")"
+    stage_dir="$stage_parent/$package_name"
+    mkdir -- "$stage_dir"
     cp -a -- "$artifact_dir/." "$stage_dir/"
 else
     archive="$release_dir/$package_name-v$mod_version.zip"
@@ -97,6 +101,7 @@ else
     stage_dir="$release_extract_dir/$package_name"
 fi
 python3 "$repo_root/scripts/validate-package.py" "$stage_dir" --rimworld-dir "$rimworld_dir"
+python3 "$repo_root/scripts/validate-mod.py" "$stage_dir"
 staged_metadata="$stage_dir/About/About.xml"
 staged_package_id="$(python3 "$repo_root/scripts/project.py" "$staged_metadata" package-id)"
 staged_version="$(python3 "$repo_root/scripts/project.py" "$staged_metadata" version)"
@@ -115,6 +120,10 @@ fi
 mv -T -- "$stage_dir" "$target_dir"
 new_target_placed=true
 stage_dir=""
+if [[ -n "$stage_parent" ]]; then
+    rmdir -- "$stage_parent"
+    stage_parent=""
+fi
 if [[ "$install_release" == false ]]; then
     diff -r -- "$artifact_dir" "$target_dir"
 else

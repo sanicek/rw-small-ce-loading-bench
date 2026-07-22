@@ -11,6 +11,8 @@ import unittest
 import zipfile
 from pathlib import Path
 
+from PIL import Image, ImageDraw
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = REPO_ROOT / "scripts"
@@ -34,6 +36,8 @@ ValidationError = validator.ValidationError
 validate = validator.validate
 source_validator = script_module("validate_source", "validate-source.py")
 SourceError = source_validator.SourceError
+mod_validator = script_module("validate_mod", "validate-mod.py")
+ModValidationError = mod_validator.ModValidationError
 
 
 class PackageFixture:
@@ -171,6 +175,93 @@ class ValidatorTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValidationError, "across catalogs"):
             validate(self.fixture.package)
+
+
+class ModValidatorTests(unittest.TestCase):
+    def test_maintained_source_has_fixed_1x1_contract(self) -> None:
+        mod_validator.validate_mod(REPO_ROOT)
+
+    def test_missing_southward_alignment_offset_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "Package"
+            shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
+            texture_source = REPO_ROOT / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            texture_target = package / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            shutil.copytree(texture_source, texture_target)
+            patch = package / "Patches" / "SmallCELoadingBench" / "AmmoBench.xml"
+            patch.write_text(
+                patch.read_text(encoding="utf-8").replace("          <drawOffset>(0,0,-0.1)</drawOffset>\n", ""),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ModValidationError, "fixed 1x1 contract"):
+                mod_validator.validate_mod(package)
+
+    def test_missing_recolor_mask_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "Package"
+            shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
+            texture_source = REPO_ROOT / "Textures" / "Things" / "Building" / "SmallCELoadingBench" / "LoadingBench.png"
+            texture_target = package / "Textures" / "Things" / "Building" / "SmallCELoadingBench" / "LoadingBench.png"
+            texture_target.parent.mkdir(parents=True)
+            shutil.copyfile(texture_source, texture_target)
+            with self.assertRaisesRegex(ModValidationError, "required texture"):
+                mod_validator.validate_mod(package)
+
+    def test_runtime_artwork_byte_drift_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "Package"
+            shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
+            texture_source = REPO_ROOT / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            texture_target = package / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            shutil.copytree(texture_source, texture_target)
+            with (texture_target / "LoadingBench.png").open("ab") as texture:
+                texture.write(b"drift")
+            with self.assertRaisesRegex(ModValidationError, "approved runtime artwork bytes changed"):
+                mod_validator.validate_mod(package)
+
+
+class PrototypeArtworkTests(unittest.TestCase):
+    def test_compositor_preserves_base_and_mutes_fixture(self) -> None:
+        composer = script_module("compose_loading_bench_prototype", "compose-loading-bench-prototype.py")
+        base = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+        ImageDraw.Draw(base).rectangle((21, 13, 107, 110), fill=(210, 210, 210, 255))
+        mask = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+        ImageDraw.Draw(mask).rectangle((21, 13, 107, 110), fill=(255, 0, 0, 255))
+        source = Image.new("RGB", (50, 50), (220, 220, 220))
+        ImageDraw.Draw(source).rectangle((10, 8, 40, 42), fill=(120, 35, 30))
+
+        texture, composed_mask = composer.compose_prototype(
+            source,
+            base,
+            mask,
+            crop=(0, 0, 50, 50),
+            maximum=(30, 34),
+            center_x=64,
+            bottom=90,
+            detail_scale=0.5,
+            blur_radius=0.55,
+            noise_amplitude=5,
+        )
+        repeated_texture, repeated_mask = composer.compose_prototype(
+            source,
+            base,
+            mask,
+            crop=(0, 0, 50, 50),
+            maximum=(30, 34),
+            center_x=64,
+            bottom=90,
+            detail_scale=0.5,
+            blur_radius=0.55,
+            noise_amplitude=5,
+        )
+
+        self.assertEqual(texture.tobytes(), repeated_texture.tobytes())
+        self.assertEqual(composed_mask.tobytes(), repeated_mask.tobytes())
+        self.assertEqual(base.getpixel((24, 20)), texture.getpixel((24, 20)))
+        self.assertGreater(texture.getpixel((64, 75))[0], texture.getpixel((64, 75))[1])
+        self.assertLess(texture.getpixel((64, 75))[0] - texture.getpixel((64, 75))[1], 70)
+        self.assertEqual((112, 0, 0), composed_mask.getpixel((64, 75))[:3])
+        self.assertEqual((255, 0, 0), composed_mask.getpixel((24, 20))[:3])
 
 
 class ReleaseArchiveTests(unittest.TestCase):
@@ -330,11 +421,48 @@ class SourceTests(unittest.TestCase):
                 source_validator.validate_source(repo)
 
     def test_release_requires_a_version_record(self) -> None:
-        with self.assertRaisesRegex(SourceError, "release record is required"):
-            source_validator.validate_source(REPO_ROOT, release=True)
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self.copy_repository(Path(temporary))
+            (repo / "docs" / "releases" / "0.1.0.md").unlink()
+            with self.assertRaisesRegex(SourceError, "release record is required"):
+                source_validator.validate_source(repo, release=True)
+
+    def test_release_record_must_be_tracked(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = self.copy_repository(Path(temporary))
+            with self.assertRaisesRegex(SourceError, "release record must be tracked"):
+                source_validator.validate_source(repo, release=True)
 
 
 class InstallTests(unittest.TestCase):
+    def test_installer_stages_a_correctly_named_package(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            repo = root / "repo"
+            shutil.copytree(
+                REPO_ROOT,
+                repo,
+                ignore=shutil.ignore_patterns(".git", "artifacts", "__pycache__", "*.pyc"),
+            )
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            rimworld = root / "RimWorld"
+            (rimworld / "Mods").mkdir(parents=True)
+            (rimworld / "Version.txt").write_text("1.6.4871 rev598\n", encoding="utf-8")
+
+            subprocess.run(
+                [repo / "scripts" / "install-local.sh"],
+                cwd=repo,
+                env={**__import__("os").environ, "RIMWORLD_DIR": str(rimworld)},
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            installed = rimworld / "Mods" / "SmallCELoadingBench"
+            self.assertTrue((installed / "About" / "About.xml").is_file())
+            self.assertFalse(any((rimworld / "Mods").glob(".SmallCELoadingBench.stage.*")))
+
     def test_installer_refuses_unrelated_existing_mod(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             rimworld = Path(temporary) / "RimWorld"

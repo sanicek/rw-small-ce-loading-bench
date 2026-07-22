@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <!--
+  Keep Combat Extended's AmmoBench identity and behavior, changing only its
+  footprint and presentation. The Def remains rotatable so players can choose
+  the interaction cell, while Graphic_Single keeps one stable perspective.
+  -->
+  <Operation Class="PatchOperationSequence">
+    <operations>
+      <li Class="PatchOperationReplace">
+        <xpath>Defs/ThingDef[defName="AmmoBench"]/size</xpath>
+        <value>
+          <size>(1,1)</size>
+        </value>
+      </li>
+      <li Class="PatchOperationReplace">
+        <xpath>Defs/ThingDef[defName="AmmoBench"]/graphicData/texPath</xpath>
+        <value>
+          <texPath>Things/Building/SmallCELoadingBench/LoadingBench</texPath>
+        </value>
+      </li>
+      <li Class="PatchOperationReplace">
+        <xpath>Defs/ThingDef[defName="AmmoBench"]/graphicData/graphicClass</xpath>
+        <value>
+          <graphicClass>Graphic_Single</graphicClass>
+        </value>
+      </li>
+      <li Class="PatchOperationReplace">
+        <xpath>Defs/ThingDef[defName="AmmoBench"]/graphicData/drawSize</xpath>
+        <value>
+          <drawSize>(1.5,1.5)</drawSize>
+        </value>
+      </li>
+      <li Class="PatchOperationAdd">
+        <xpath>Defs/ThingDef[defName="AmmoBench"]/graphicData</xpath>
+        <value>
+          <drawRotated>false</drawRotated>
+          <allowFlip>false</allowFlip>
+          <drawOffset>(0,0,-0.1)</drawOffset>
+        </value>
+      </li>
+      <li Class="PatchOperationAdd">
+        <xpath>Defs/ThingDef[defName="AmmoBench"]</xpath>
+        <value>
+          <rotatable>true</rotatable>
+        </value>
+      </li>
+    </operations>
+  </Operation>
+</Patch>

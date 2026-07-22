@@ -1,16 +1,16 @@
 # Small CE Loading Bench
 
-Small CE Loading Bench is a RimWorld 1.6 compatibility mod intended to reduce
-Combat Extended's loading bench from a 3x1 footprint to a compact 2x1 footprint
-without replacing the bench or changing its recipes. The repository is
-currently bootstrapped for development; the gameplay patch is not implemented
-yet.
+Small CE Loading Bench is a RimWorld 1.6 compatibility mod that reduces Combat
+Extended's loading bench from a 3x1 footprint to a compact 1x1 footprint without
+replacing the bench or changing its recipes.
 
-## Planned Behavior
+## Behavior
 
 - Adjust Combat Extended's existing `AmmoBench` through a declarative XML patch.
 - Preserve the original Def identity, recipes, bills, research requirement, and
   work-giver integration.
+- Keep one fixed-perspective graphic while allowing placement rotation to move
+  the interaction spot to any side.
 - Avoid C# and Harmony unless engine-native patching proves insufficient.
 
 ## Requirements
@@ -20,7 +20,7 @@ yet.
 
 ## Package Layout
 
-- `About/`, `Defs/`, `Languages/`, and later `Textures/` are maintained game content.
+- `About/`, `Patches/`, and `Textures/` are maintained game content.
 - `scripts/build.sh` recreates `artifacts/<package-name>` from an allowlist.
 - `scripts/validate-package.py` checks generic package contracts.
 - `scaffolds/csharp/` is excluded from packages until copied to root `Source/`.

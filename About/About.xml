@@ -10,9 +10,7 @@
     <li>1.6</li>
   </supportedVersions>
   <description>
-Small CE Loading Bench is planned to reduce Combat Extended's loading bench from a 3x1 footprint to a compact 2x1 footprint while preserving its normal recipes and behavior.
-
-This project is under development and does not yet change gameplay.
+Small CE Loading Bench reduces Combat Extended's loading bench from a 3x1 footprint to a compact 1x1 footprint while preserving its normal recipes and behavior. Its fixed-perspective graphic stays visually consistent while the interaction spot can be rotated to any side.
   </description>
   <loadAfter>
     <li>Ludeon.RimWorld</li>

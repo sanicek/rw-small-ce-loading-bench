@@ -1,18 +1,13 @@
-# Prompts and exact approved outputs are tracked; raw generations and receipts
-# remain in rw-art-pipeline's external state directory.
+# Exact output contracts are tracked here; reusable source artwork remains in
+# rw-art-pipeline's versioned template catalog.
 [project]
 package_id = "Sanicek.SmallCELoadingBench"
 name = "Small CE Loading Bench"
 root = ".."
 
-[providers.scenario]
-candidates = 4
-poll_seconds = 3
-max_wait_seconds = 900
-
 [[requests]]
 id = "mod-icon"
-title = "Small CE Loading Bench icon"
+title = "Sanicek S mod icon"
 width = 256
 height = 256
 occupied_fraction = 1.0
@@ -21,14 +16,11 @@ background_removal = "none"
 fit = "contain"
 output_mode = "RGBA"
 accent_saturation_min = 0.0
-generation = { provider = "scenario", model_id = "model_openai-gpt-image-2", candidates = 4, parameters = { width = 1024, height = 1024, quality = "medium", background = "opaque", numOutputs = 1 } }
 outputs = [
   { path = "About/ModIcon.png" },
 ]
 prompt = """
-Create one square RimWorld mod icon for Small CE Loading Bench. Preserve the
-established Sanicek maker-badge frame and replace only its empty lower emblem
-with one bold symbol of a compact ammunition loading bench. Keep the result
-legible at small size. Return one clean high-resolution image with no text, UI,
-watermark, loose ammunition, weapon, or surrounding scene.
+Use rw-art's provider-independent sanicek-s-logo template, rimworld-mod-icon
+variant, as the exact Small CE Loading Bench mod icon. Preserve its transparent
+background and canonical bytes rather than regenerating or recomposing it.
 """

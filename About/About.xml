@@ -4,7 +4,7 @@
   <name>Small CE Loading Bench</name>
   <author>Sanicek</author>
   <packageId>Sanicek.SmallCELoadingBench</packageId>
-  <modVersion>0.1.0</modVersion>
+  <modVersion>0.1.1</modVersion>
   <url>https://github.com/sanicek/rw-small-ce-loading-bench</url>
   <supportedVersions>
     <li>1.6</li>

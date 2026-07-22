@@ -79,14 +79,14 @@ class ProjectTests(unittest.TestCase):
     def test_project_metadata_is_valid(self) -> None:
         project = load_project(REPO_ROOT / "About" / "About.xml")
         self.assertEqual(project.package_name, "SmallCELoadingBench")
-        self.assertEqual(project.version, "0.1.0")
+        self.assertEqual(project.version, "0.1.1")
         self.assertEqual(project.supported_versions, ("1.6",))
 
     def test_prerelease_version_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             metadata = Path(temporary) / "About.xml"
             text = (REPO_ROOT / "About" / "About.xml").read_text(encoding="utf-8")
-            metadata.write_text(text.replace("0.1.0", "0.1.0-rc.1"), encoding="utf-8")
+            metadata.write_text(text.replace("0.1.1", "0.1.1-rc.1"), encoding="utf-8")
             with self.assertRaisesRegex(ProjectError, "MAJOR.MINOR.PATCH"):
                 load_project(metadata)
 
@@ -327,7 +327,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 .replace("SmallCELoadingBench", "FixtureMod"),
                 encoding="utf-8",
             )
-            shutil.copyfile(repo / "docs" / "releases" / "EXAMPLE.md", repo / "docs" / "releases" / "0.1.0.md")
+            shutil.copyfile(repo / "docs" / "releases" / "EXAMPLE.md", repo / "docs" / "releases" / "0.1.1.md")
             subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
             subprocess.run(["git", "add", "."], cwd=repo, check=True)
             subprocess.run(
@@ -338,7 +338,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
             command = [sys.executable, repo / "scripts" / "package-release.py"]
             subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
-            archive = repo / "artifacts" / "releases" / "FixtureMod-v0.1.0.zip"
+            archive = repo / "artifacts" / "releases" / "FixtureMod-v0.1.1.zip"
             first = archive.read_bytes()
             subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
             self.assertEqual(first, archive.read_bytes())
@@ -423,7 +423,7 @@ class SourceTests(unittest.TestCase):
     def test_release_requires_a_version_record(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repo = self.copy_repository(Path(temporary))
-            (repo / "docs" / "releases" / "0.1.0.md").unlink()
+            (repo / "docs" / "releases" / "0.1.1.md").unlink()
             with self.assertRaisesRegex(SourceError, "release record is required"):
                 source_validator.validate_source(repo, release=True)
 

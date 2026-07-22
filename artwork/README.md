@@ -34,10 +34,10 @@ The default sibling checkout is `../rw-art-pipeline`; set
 
 Phase one uses the approved `generic-cube-workbench-1x1` runtime texture and
 recolor mask from rw-art commit
-`da429ef63720c034a96403954fccd4b28bd7aefa`:
+`804a5631f666f8e48fe1a1c9b41be2f1ab138009`:
 
-- Texture SHA-256: `fc3aff67a72a181a35b0dffcccce36a8d14632ddeb47a5cb594e5944421750a2`
-- Mask SHA-256: `d04af9edf226198dbf6dca48571a1b0055f28766e97ee4ff943ff6021da68785`
+- Texture SHA-256: `4da3b2b9a06ccac1a879da532946ff28f79120280bd41cbff10c6467c9794fad`
+- Mask SHA-256: `75aae84875fe21129a39f2aa9e4ca571339cacdfb495fbeb489889111138fa0c`
 
 Export templates through this repository's wrapper:
 
@@ -48,7 +48,8 @@ Export templates through this repository's wrapper:
 
 The cube uses a square `(1.5,1.5)` draw mesh, matching the engine-native drill
 pattern so horizontal placement rotations cannot swap its dimensions. Its
-`96x118` visible bounds preserve the approved one-cell width and standard
-worktable height inside that square canvas. It is intentionally still a blank
-base; project-specific tools follow only after its in-game scale and recoloring
-pass.
+`96x104` visible bounds preserve the one-cell width while matching the shallower
+profile of standard worktables. The plain top and apron share one stuff-color
+channel; there is no separate white surface or decorative frame. It is
+intentionally still a blank base; project-specific tools follow only after its
+in-game scale and recoloring pass.

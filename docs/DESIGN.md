@@ -21,14 +21,15 @@ The first visual phase uses rw-art's symmetric cube workbench on a square
 `(1.5,1.5)` draw mesh. RimWorld swaps non-square mesh dimensions for horizontal
 rotations even when `drawRotated` is false; the square mesh is therefore part of
 the fixed-orientation contract used by the deep drill. The sprite occupies a
-centered `96x118` region within its `128x128` canvas, preserving one standard
-bench-cell width and normal worktable height. This evaluates scale, alignment,
-fixed perspective, and stuff recoloring before adding loading-specific tools.
+centered `96x104` region within its `128x128` canvas, preserving one standard
+bench-cell width and the shallow profile of vanilla worktables. This evaluates
+scale, alignment, fixed perspective, and stuff recoloring before adding
+loading-specific tools.
 
 `CutoutComplex` maps the stuff-derived primary color to the mask's red channel.
-The green channel receives the Def's static secondary color, keeping the work
-surface neutral while the frame and apron reflect steel, wood, or another valid
-stuff material.
+The complete opaque cube uses that channel, so its plain top and front apron
+both reflect steel, wood, or another valid stuff material. Dark outlines remain
+visually dark because they multiply by the same material color.
 
 ## Durable contracts
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import struct
 import sys
 import xml.etree.ElementTree as ET
@@ -27,7 +28,7 @@ EXPECTED_OPERATIONS = (
     (
         "PatchOperationReplace",
         'Defs/ThingDef[defName="AmmoBench"]/graphicData/drawSize',
-        (("drawSize", "(1,1)"),),
+        (("drawSize", "(1.17,1.5)"),),
     ),
     (
         "PatchOperationAdd",
@@ -37,6 +38,10 @@ EXPECTED_OPERATIONS = (
     ("PatchOperationAdd", 'Defs/ThingDef[defName="AmmoBench"]', (("rotatable", "true"),)),
 )
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+EXPECTED_TEXTURE_HASHES = {
+    "LoadingBench.png": "f8902f84876377985ea0cfec378d564e3a720b22aae9c52b601b012056f18d11",
+    "LoadingBench_m.png": "cd7ae393251af51bb88ace0961fcd49d4456513fe7a0beb9dc4f8dee9d2fd865",
+}
 
 
 class ModValidationError(ValueError):
@@ -93,6 +98,9 @@ def validate_mod(package: Path) -> None:
     mask = package / TEXTURE_ROOT / "LoadingBench_m.png"
     validate_texture(texture)
     validate_texture(mask)
+    for path in (texture, mask):
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        require(digest == EXPECTED_TEXTURE_HASHES[path.name], f"approved template bytes changed: {path}")
     require(texture.read_bytes() != mask.read_bytes(), "diffuse texture and recolor mask must differ")
 
 

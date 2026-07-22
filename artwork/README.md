@@ -32,19 +32,20 @@ The default sibling checkout is `../rw-art-pipeline`; set
 
 ## Workbench template trial
 
-Phase one uses the exact `generic-workbench-1x1` runtime texture and recolor
-mask introduced by rw-art commit `5b0f4bd5156119d4d42ee223986bfa9880f89901`:
+Phase one uses the approved `generic-cube-workbench-1x1` runtime texture and
+recolor mask from rw-art commit
+`33a5eb3ed928373dc7b1a5d959ca1c3d2bd45c13`:
 
-- Texture SHA-256: `c97a8c4684f2aa0107091167a3bb2e44955eba6cffffbd6f7723237449309846`
-- Mask SHA-256: `697218e1916b90e71ecde69a269ca3e35d78307411897a16f30f3ca3943e605c`
+- Texture SHA-256: `f8902f84876377985ea0cfec378d564e3a720b22aae9c52b601b012056f18d11`
+- Mask SHA-256: `cd7ae393251af51bb88ace0961fcd49d4456513fe7a0beb9dc4f8dee9d2fd865`
 
 Export templates through this repository's wrapper:
 
 ```bash
-./scripts/artwork.sh templates export generic-workbench-1x1 rimworld-texture Textures/Things/Building/SmallCELoadingBench/LoadingBench.png
-./scripts/artwork.sh templates export generic-workbench-1x1 rimworld-color-mask Textures/Things/Building/SmallCELoadingBench/LoadingBench_m.png
+./scripts/artwork.sh templates export generic-cube-workbench-1x1 rimworld-texture Textures/Things/Building/SmallCELoadingBench/LoadingBench.png
+./scripts/artwork.sh templates export generic-cube-workbench-1x1 rimworld-color-mask Textures/Things/Building/SmallCELoadingBench/LoadingBench_m.png
 ```
 
-The base trial is intentionally not a final loading-bench design. In-game
-findings feed back into rw-art's deterministic generator before project-specific
-tools are added to the neutral work surface.
+The cube uses a `(1.17,1.5)` draw size derived from one third of vanilla's
+three-cell butcher-table presentation. It is intentionally still a blank base;
+project-specific tools follow only after its in-game scale and recoloring pass.

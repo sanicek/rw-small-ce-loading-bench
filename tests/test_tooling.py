@@ -190,6 +190,18 @@ class ModValidatorTests(unittest.TestCase):
             with self.assertRaisesRegex(ModValidationError, "required texture"):
                 mod_validator.validate_mod(package)
 
+    def test_template_byte_drift_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "Package"
+            shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
+            texture_source = REPO_ROOT / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            texture_target = package / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            shutil.copytree(texture_source, texture_target)
+            with (texture_target / "LoadingBench.png").open("ab") as texture:
+                texture.write(b"drift")
+            with self.assertRaisesRegex(ModValidationError, "approved template bytes changed"):
+                mod_validator.validate_mod(package)
+
 
 class ReleaseArchiveTests(unittest.TestCase):
     def test_archive_bytes_are_deterministic(self) -> None:

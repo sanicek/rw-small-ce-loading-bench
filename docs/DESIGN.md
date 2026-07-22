@@ -17,8 +17,11 @@ The bench follows RimWorld's engine-native `DeepDrill` presentation pattern: a
 rotatable one-cell Def uses `Graphic_Single` with `drawRotated` and `allowFlip`
 disabled. Placement rotation therefore moves the inherited interaction cell
 without rotating or mirroring the fixed south-facing pseudo-perspective art.
-The first visual phase deliberately uses rw-art's unmodified generic workbench
-to evaluate scale, alignment, perspective, and stuff recoloring in game.
+The first visual phase uses rw-art's symmetric cube workbench at draw size
+`(1.17,1.5)`. The width is one third of vanilla's 3.5-wide butcher-table
+presentation, while the retained 1.5 height gives the one-cell graphic normal
+worktable overhang. This evaluates scale, alignment, fixed perspective, and
+stuff recoloring before adding loading-specific tools.
 
 `CutoutComplex` maps the stuff-derived primary color to the mask's red channel.
 The green channel receives the Def's static secondary color, keeping the work

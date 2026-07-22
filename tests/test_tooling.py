@@ -11,6 +11,8 @@ import unittest
 import zipfile
 from pathlib import Path
 
+from PIL import Image, ImageDraw
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = REPO_ROOT / "scripts"
@@ -179,6 +181,21 @@ class ModValidatorTests(unittest.TestCase):
     def test_maintained_source_has_fixed_1x1_contract(self) -> None:
         mod_validator.validate_mod(REPO_ROOT)
 
+    def test_missing_southward_alignment_offset_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "Package"
+            shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
+            texture_source = REPO_ROOT / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            texture_target = package / "Textures" / "Things" / "Building" / "SmallCELoadingBench"
+            shutil.copytree(texture_source, texture_target)
+            patch = package / "Patches" / "SmallCELoadingBench" / "AmmoBench.xml"
+            patch.write_text(
+                patch.read_text(encoding="utf-8").replace("          <drawOffset>(0,0,-0.1)</drawOffset>\n", ""),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ModValidationError, "fixed 1x1 contract"):
+                mod_validator.validate_mod(package)
+
     def test_missing_recolor_mask_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             package = Path(temporary) / "Package"
@@ -190,7 +207,7 @@ class ModValidatorTests(unittest.TestCase):
             with self.assertRaisesRegex(ModValidationError, "required texture"):
                 mod_validator.validate_mod(package)
 
-    def test_template_byte_drift_is_rejected(self) -> None:
+    def test_runtime_artwork_byte_drift_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             package = Path(temporary) / "Package"
             shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
@@ -199,8 +216,52 @@ class ModValidatorTests(unittest.TestCase):
             shutil.copytree(texture_source, texture_target)
             with (texture_target / "LoadingBench.png").open("ab") as texture:
                 texture.write(b"drift")
-            with self.assertRaisesRegex(ModValidationError, "approved template bytes changed"):
+            with self.assertRaisesRegex(ModValidationError, "approved runtime artwork bytes changed"):
                 mod_validator.validate_mod(package)
+
+
+class PrototypeArtworkTests(unittest.TestCase):
+    def test_compositor_preserves_base_and_mutes_fixture(self) -> None:
+        composer = script_module("compose_loading_bench_prototype", "compose-loading-bench-prototype.py")
+        base = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+        ImageDraw.Draw(base).rectangle((21, 13, 107, 110), fill=(210, 210, 210, 255))
+        mask = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+        ImageDraw.Draw(mask).rectangle((21, 13, 107, 110), fill=(255, 0, 0, 255))
+        source = Image.new("RGB", (50, 50), (220, 220, 220))
+        ImageDraw.Draw(source).rectangle((10, 8, 40, 42), fill=(120, 35, 30))
+
+        texture, composed_mask = composer.compose_prototype(
+            source,
+            base,
+            mask,
+            crop=(0, 0, 50, 50),
+            maximum=(30, 34),
+            center_x=64,
+            bottom=90,
+            detail_scale=0.5,
+            blur_radius=0.55,
+            noise_amplitude=5,
+        )
+        repeated_texture, repeated_mask = composer.compose_prototype(
+            source,
+            base,
+            mask,
+            crop=(0, 0, 50, 50),
+            maximum=(30, 34),
+            center_x=64,
+            bottom=90,
+            detail_scale=0.5,
+            blur_radius=0.55,
+            noise_amplitude=5,
+        )
+
+        self.assertEqual(texture.tobytes(), repeated_texture.tobytes())
+        self.assertEqual(composed_mask.tobytes(), repeated_mask.tobytes())
+        self.assertEqual(base.getpixel((24, 20)), texture.getpixel((24, 20)))
+        self.assertGreater(texture.getpixel((64, 75))[0], texture.getpixel((64, 75))[1])
+        self.assertLess(texture.getpixel((64, 75))[0] - texture.getpixel((64, 75))[1], 70)
+        self.assertEqual((112, 0, 0), composed_mask.getpixel((64, 75))[:3])
+        self.assertEqual((255, 0, 0), composed_mask.getpixel((24, 20))[:3])
 
 
 class ReleaseArchiveTests(unittest.TestCase):

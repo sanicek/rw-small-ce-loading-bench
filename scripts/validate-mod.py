@@ -33,14 +33,14 @@ EXPECTED_OPERATIONS = (
     (
         "PatchOperationAdd",
         'Defs/ThingDef[defName="AmmoBench"]/graphicData',
-        (("drawRotated", "false"), ("allowFlip", "false")),
+        (("drawRotated", "false"), ("allowFlip", "false"), ("drawOffset", "(0,0,-0.1)")),
     ),
     ("PatchOperationAdd", 'Defs/ThingDef[defName="AmmoBench"]', (("rotatable", "true"),)),
 )
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 EXPECTED_TEXTURE_HASHES = {
-    "LoadingBench.png": "4da3b2b9a06ccac1a879da532946ff28f79120280bd41cbff10c6467c9794fad",
-    "LoadingBench_m.png": "75aae84875fe21129a39f2aa9e4ca571339cacdfb495fbeb489889111138fa0c",
+    "LoadingBench.png": "06280e4a31a5a20644028a2a27405ee241e1a189f5d9d9600ceb398d1cc6b1e9",
+    "LoadingBench_m.png": "219035638caae1b08f673f6ed35bfc1f88e78e7570241630e05347f13f07e88f",
 }
 
 
@@ -100,7 +100,7 @@ def validate_mod(package: Path) -> None:
     validate_texture(mask)
     for path in (texture, mask):
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        require(digest == EXPECTED_TEXTURE_HASHES[path.name], f"approved template bytes changed: {path}")
+        require(digest == EXPECTED_TEXTURE_HASHES[path.name], f"approved runtime artwork bytes changed: {path}")
     require(texture.read_bytes() != mask.read_bytes(), "diffuse texture and recolor mask must differ")
 
 

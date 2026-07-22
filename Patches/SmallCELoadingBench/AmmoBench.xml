@@ -36,6 +36,7 @@
         <value>
           <drawRotated>false</drawRotated>
           <allowFlip>false</allowFlip>
+          <drawOffset>(0,0,-0.1)</drawOffset>
         </value>
       </li>
       <li Class="PatchOperationAdd">

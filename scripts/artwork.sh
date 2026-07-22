@@ -12,7 +12,7 @@ if [[ ! -f "$pipeline_dir/rw_art_pipeline/__main__.py" ]]; then
     exit 1
 fi
 if [[ $# -lt 1 ]]; then
-    printf 'Usage: %s {templates|prompt|auth|models|generate|select|intake|approve|reject|validate} [arguments...]\n' "$0" >&2
+    printf 'Usage: %s {templates|prototype|prompt|auth|models|generate|select|intake|approve|reject|validate} [arguments...]\n' "$0" >&2
     exit 2
 fi
 
@@ -20,5 +20,8 @@ global_args=()
 [[ -n "${RW_ART_STATE_DIR:-}" ]] && global_args+=(--state-dir "$RW_ART_STATE_DIR")
 if [[ "$1" == "templates" ]]; then
     PYTHONPATH="$pipeline_dir" exec python3 -P -m rw_art_pipeline templates "${@:2}"
+fi
+if [[ "$1" == "prototype" ]]; then
+    exec python3 -P "$repo_root/scripts/compose-loading-bench-prototype.py" "${@:2}"
 fi
 PYTHONPATH="$pipeline_dir" exec python3 -P -m rw_art_pipeline "${global_args[@]}" "$1" "$manifest" "${@:2}"

@@ -21,15 +21,30 @@ The first visual phase uses rw-art's symmetric cube workbench on a square
 `(1.5,1.5)` draw mesh. RimWorld swaps non-square mesh dimensions for horizontal
 rotations even when `drawRotated` is false; the square mesh is therefore part of
 the fixed-orientation contract used by the deep drill. The sprite occupies a
-centered `96x104` region within its `128x128` canvas, preserving one standard
+centered `92x103` region within its `128x128` canvas, preserving one standard
 bench-cell width and the shallow profile of vanilla worktables. This evaluates
 scale, alignment, fixed perspective, and stuff recoloring before adding
-loading-specific tools.
+loading-specific tools. A common `(0,0,-0.1)` draw offset aligns that visible
+region with vanilla worktables. Because the offset is not directional, rotating
+the placement continues to move only the interaction cell.
 
 `CutoutComplex` maps the stuff-derived primary color to the mask's red channel.
 The complete opaque cube uses that channel, so its plain top and front apron
-both reflect steel, wood, or another valid stuff material. Dark outlines remain
-visually dark because they multiply by the same material color.
+both reflect steel, wood, or another valid stuff material. The darker apron
+meets the top without a black divider, using the tonal break seen on vanilla
+worktables. Perimeter outlines remain visually dark because they multiply by
+the same material color.
+
+The loading-specific artwork adds a compact powder hopper and loading press
+selected from an external concept sheet. The compositor reduces their
+scale, contrast, saturation, and micro-detail to match vanilla worktable
+fixtures. A half-resolution intermediate pass and slight blur merge icon-like
+internal edges, while deterministic low-frequency luminance noise replaces
+smooth generated gradients with restrained painted variation. A partial red
+mask lets the fixtures inherit some material color, following the electric
+tailoring bench, while the canonical base remains fully stuff-colored. The
+composition is deterministic and records its source hash, crop, treatment, and
+placement in `artwork/README.md`.
 
 ## Durable contracts
 

@@ -28,7 +28,7 @@
       <li Class="PatchOperationReplace">
         <xpath>Defs/ThingDef[defName="AmmoBench"]/graphicData/drawSize</xpath>
         <value>
-          <drawSize>(1.17,1.5)</drawSize>
+          <drawSize>(1.5,1.5)</drawSize>
         </value>
       </li>
       <li Class="PatchOperationAdd">

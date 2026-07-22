@@ -34,10 +34,10 @@ The default sibling checkout is `../rw-art-pipeline`; set
 
 Phase one uses the approved `generic-cube-workbench-1x1` runtime texture and
 recolor mask from rw-art commit
-`33a5eb3ed928373dc7b1a5d959ca1c3d2bd45c13`:
+`da429ef63720c034a96403954fccd4b28bd7aefa`:
 
-- Texture SHA-256: `f8902f84876377985ea0cfec378d564e3a720b22aae9c52b601b012056f18d11`
-- Mask SHA-256: `cd7ae393251af51bb88ace0961fcd49d4456513fe7a0beb9dc4f8dee9d2fd865`
+- Texture SHA-256: `fc3aff67a72a181a35b0dffcccce36a8d14632ddeb47a5cb594e5944421750a2`
+- Mask SHA-256: `d04af9edf226198dbf6dca48571a1b0055f28766e97ee4ff943ff6021da68785`
 
 Export templates through this repository's wrapper:
 
@@ -46,6 +46,9 @@ Export templates through this repository's wrapper:
 ./scripts/artwork.sh templates export generic-cube-workbench-1x1 rimworld-color-mask Textures/Things/Building/SmallCELoadingBench/LoadingBench_m.png
 ```
 
-The cube uses a `(1.17,1.5)` draw size derived from one third of vanilla's
-three-cell butcher-table presentation. It is intentionally still a blank base;
-project-specific tools follow only after its in-game scale and recoloring pass.
+The cube uses a square `(1.5,1.5)` draw mesh, matching the engine-native drill
+pattern so horizontal placement rotations cannot swap its dimensions. Its
+`96x118` visible bounds preserve the approved one-cell width and standard
+worktable height inside that square canvas. It is intentionally still a blank
+base; project-specific tools follow only after its in-game scale and recoloring
+pass.

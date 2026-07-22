@@ -28,7 +28,7 @@ EXPECTED_OPERATIONS = (
     (
         "PatchOperationReplace",
         'Defs/ThingDef[defName="AmmoBench"]/graphicData/drawSize',
-        (("drawSize", "(1.17,1.5)"),),
+        (("drawSize", "(1.5,1.5)"),),
     ),
     (
         "PatchOperationAdd",
@@ -39,8 +39,8 @@ EXPECTED_OPERATIONS = (
 )
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 EXPECTED_TEXTURE_HASHES = {
-    "LoadingBench.png": "f8902f84876377985ea0cfec378d564e3a720b22aae9c52b601b012056f18d11",
-    "LoadingBench_m.png": "cd7ae393251af51bb88ace0961fcd49d4456513fe7a0beb9dc4f8dee9d2fd865",
+    "LoadingBench.png": "fc3aff67a72a181a35b0dffcccce36a8d14632ddeb47a5cb594e5944421750a2",
+    "LoadingBench_m.png": "d04af9edf226198dbf6dca48571a1b0055f28766e97ee4ff943ff6021da68785",
 }
 
 

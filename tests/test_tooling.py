@@ -80,14 +80,14 @@ class ProjectTests(unittest.TestCase):
     def test_project_metadata_is_valid(self) -> None:
         project = load_project(REPO_ROOT / "About" / "About.xml")
         self.assertEqual(project.package_name, "SmallCELoadingBench")
-        self.assertEqual(project.version, "0.1.2")
+        self.assertEqual(project.version, "0.1.3")
         self.assertEqual(project.supported_versions, ("1.6",))
 
     def test_prerelease_version_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             metadata = Path(temporary) / "About.xml"
             text = (REPO_ROOT / "About" / "About.xml").read_text(encoding="utf-8")
-            metadata.write_text(text.replace("0.1.2", "0.1.2-rc.1"), encoding="utf-8")
+            metadata.write_text(text.replace("0.1.3", "0.1.3-rc.1"), encoding="utf-8")
             with self.assertRaisesRegex(ProjectError, "MAJOR.MINOR.PATCH"):
                 load_project(metadata)
 
@@ -294,6 +294,29 @@ class PrototypeArtworkTests(unittest.TestCase):
         self.assertEqual((112, 0, 0), composed_mask.getpixel((64, 75))[:3])
         self.assertEqual((255, 0, 0), composed_mask.getpixel((24, 20))[:3])
 
+    def test_positioned_source_removes_neutral_backing_without_moving_fixture(self) -> None:
+        composer = script_module("compose_loading_bench_prototype", "compose-loading-bench-prototype.py")
+        base = Image.new("RGBA", (128, 128), (180, 180, 180, 255))
+        mask = Image.new("RGBA", (128, 128), (255, 0, 0, 255))
+        source = base.copy()
+        ImageDraw.Draw(source).rectangle((40, 30, 90, 90), fill=(225, 225, 225, 255))
+        ImageDraw.Draw(source).rectangle((55, 45, 75, 80), fill=(80, 75, 70, 255))
+        source.putpixel((54, 60), (190, 190, 190, 255))
+        source.putpixel((45, 35), (190, 190, 190, 255))
+
+        texture, composed_mask = composer.clean_positioned_fixture(
+            source,
+            base,
+            mask,
+            crop=(40, 30, 91, 91),
+        )
+
+        self.assertEqual(base.getpixel((45, 35)), texture.getpixel((45, 35)))
+        self.assertEqual((80, 75, 70, 255), texture.getpixel((60, 60)))
+        self.assertEqual(base.getpixel((54, 60)), texture.getpixel((54, 60)))
+        self.assertEqual((112, 0, 0), composed_mask.getpixel((60, 60))[:3])
+        self.assertEqual((255, 0, 0), composed_mask.getpixel((45, 35))[:3])
+
 
 class ReleaseArchiveTests(unittest.TestCase):
     def test_archive_bytes_are_deterministic(self) -> None:
@@ -358,7 +381,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 .replace("SmallCELoadingBench", "FixtureMod"),
                 encoding="utf-8",
             )
-            shutil.copyfile(repo / "docs" / "releases" / "EXAMPLE.md", repo / "docs" / "releases" / "0.1.2.md")
+            version = load_project(metadata).version
+            shutil.copyfile(repo / "docs" / "releases" / "EXAMPLE.md", repo / "docs" / "releases" / f"{version}.md")
             subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
             subprocess.run(["git", "add", "."], cwd=repo, check=True)
             subprocess.run(
@@ -369,7 +393,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
             command = [sys.executable, repo / "scripts" / "package-release.py"]
             subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
-            archive = repo / "artifacts" / "releases" / "FixtureMod-v0.1.2.zip"
+            archive = repo / "artifacts" / "releases" / f"FixtureMod-v{version}.zip"
             first = archive.read_bytes()
             subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
             self.assertEqual(first, archive.read_bytes())
@@ -454,7 +478,8 @@ class SourceTests(unittest.TestCase):
     def test_release_requires_a_version_record(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repo = self.copy_repository(Path(temporary))
-            (repo / "docs" / "releases" / "0.1.2.md").unlink()
+            version = load_project(repo / "About" / "About.xml").version
+            (repo / "docs" / "releases" / f"{version}.md").unlink()
             with self.assertRaisesRegex(SourceError, "release record is required"):
                 source_validator.validate_source(repo, release=True)
 

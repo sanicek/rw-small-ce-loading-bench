@@ -72,38 +72,35 @@ write directly to `About/Preview.png`:
 
 After visual approval, promote it with `./scripts/artwork.sh approve
 about-preview`. The approved `About/Preview.png` SHA-256 is
-`57677ec9a073beaf695dee96e0a673d6a6dc9cc4543cbbeb616d54a886894615`.
+`1eb77eaa21db5bf10eb01bed59732c18157662e3a74d85a048f2386cd918b7f7`.
 
 ## Loading-bench artwork
 
-The release artwork composites the second concept in the top row of the
-external `lb-proto.png` sheet onto the canonical base. The selected module
-combines a compact powder hopper with a single loading press. The generated
-sheet remains outside version control.
+The release artwork cleans an externally reviewed, positioned loading-press
+composition and places its fixture over the canonical base. The source remains
+outside version control.
 
-- Source SHA-256: `beae78c6aef9653b2c5fd70cbe09efbed1255329aacdc8dd15fa92534555adb7`
-- Source crop: `(430,70)` through `(675,290)`
-- Maximum fixture size: `64x56` on the `128x128` texture
-- Placement: centered at `x=64`, bottom aligned to `y=90`
-- Fixture treatment: gamma `0.65`, saturation `0.65`, 8-value color steps
-- Detail treatment: half-resolution intermediate render, Gaussian blur `0.55`,
-  deterministic low-frequency luminance noise with amplitude `5`
+- Source SHA-256: `f63a6e54dfcedd33f107973c62f606401406e9c66c6d1b474a3c4c82e715c065`
+- Cleanup crop: `(37,25)` through `(101,94)`
+- Fixture treatment: preserve authored scale, position, color, and shading;
+  discard neutral pixels at luminance `185` and above, unmatte the `170`-`185`
+  anti-alias band, and retain only the connected fixture assembly
 - Fixture mask: partial red `112`, matching vanilla electric-tailor fixtures
-- Texture SHA-256: `06280e4a31a5a20644028a2a27405ee241e1a189f5d9d9600ceb398d1cc6b1e9`
-- Mask SHA-256: `219035638caae1b08f673f6ed35bfc1f88e78e7570241630e05347f13f07e88f`
+- Texture SHA-256: `d0c6a2a685ca4f97081e2b12fd3cffefdfe80280ddb65fe195ef172297bbb66d`
+- Mask SHA-256: `0fd5cb99b3d04901aa56bb92928454f7b106ededbf6ae1d101d5c3b027de76f3`
 
-The compositor removes the light neutral concept-sheet background, preserves
-the canonical bench pixels, and compresses the fixture's contrast, saturation,
-and fine gradients into broader vanilla-style forms. Partial red mask values
-let the fixture inherit some stuff color while the bench body remains fully
-stuff-colored. Rebuild the artwork through the repository wrapper:
+The positioned-source cleanup removes the light neutral rectangle and its pale
+anti-aliased fringe without rescaling or moving the fixture. Disconnected marks
+and pixels identified as backing reveal the canonical base underneath; retained
+fixture coverage receives a partial red mask so it inherits some stuff color
+while the base remains fully stuff-colored. Rebuild the artwork through the
+repository wrapper:
 
 ```bash
-./scripts/artwork.sh prototype "$HOME/Downloads/ImageGen/lb-proto.png" \
+./scripts/artwork.sh prototype "$HOME/Pictures/LoadingBench.png" \
   /tmp/opencode/loading-bench-blank.png \
   /tmp/opencode/loading-bench-blank_m.png \
   Textures/Things/Building/SmallCELoadingBench/LoadingBench.png \
   Textures/Things/Building/SmallCELoadingBench/LoadingBench_m.png \
-  --crop 430,70,675,290 --maximum 64,56 --center-x 64 --bottom 90 \
-  --detail-scale 0.5 --blur-radius 0.55 --noise-amplitude 5
+  --crop 37,25,101,94 --positioned-source
 ```

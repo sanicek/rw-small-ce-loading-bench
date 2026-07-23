@@ -39,8 +39,8 @@ EXPECTED_OPERATIONS = (
 )
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 EXPECTED_TEXTURE_HASHES = {
-    "LoadingBench.png": "06280e4a31a5a20644028a2a27405ee241e1a189f5d9d9600ceb398d1cc6b1e9",
-    "LoadingBench_m.png": "219035638caae1b08f673f6ed35bfc1f88e78e7570241630e05347f13f07e88f",
+    "LoadingBench.png": "d0c6a2a685ca4f97081e2b12fd3cffefdfe80280ddb65fe195ef172297bbb66d",
+    "LoadingBench_m.png": "0fd5cb99b3d04901aa56bb92928454f7b106ededbf6ae1d101d5c3b027de76f3",
 }
 
 

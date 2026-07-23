@@ -35,16 +35,14 @@ meets the top without a black divider, using the tonal break seen on vanilla
 worktables. Perimeter outlines remain visually dark because they multiply by
 the same material color.
 
-The loading-specific artwork adds a compact powder hopper and loading press
-selected from an external concept sheet. The compositor reduces their
-scale, contrast, saturation, and micro-detail to match vanilla worktable
-fixtures. A half-resolution intermediate pass and slight blur merge icon-like
-internal edges, while deterministic low-frequency luminance noise replaces
-smooth generated gradients with restrained painted variation. A partial red
-mask lets the fixtures inherit some material color, following the electric
-tailoring bench, while the canonical base remains fully stuff-colored. The
-composition is deterministic and records its source hash, crop, treatment, and
-placement in `artwork/README.md`.
+The loading-specific artwork adds a compact monochrome loading press from an
+externally reviewed composition. Its cleanup pass removes the source's light
+neutral backing rectangle while preserving the authored fixture scale,
+position, color, shading, and contact shadow. A partial red mask lets the
+fixture inherit some material color, following the electric tailoring bench,
+while the canonical base remains fully stuff-colored. The composition is
+deterministic and records its source hash and cleanup crop in
+`artwork/README.md`.
 
 ## Durable contracts
 

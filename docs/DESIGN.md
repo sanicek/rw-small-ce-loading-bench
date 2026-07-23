@@ -49,6 +49,7 @@ deterministic and records its source hash and cleanup crop in
 Treat the following as compatibility-sensitive once published:
 
 - RimWorld package ID
+- Steam Workshop publication ID
 - Def names and inheritance
 - Translation keys referenced from code
 - Serialized settings and save keys

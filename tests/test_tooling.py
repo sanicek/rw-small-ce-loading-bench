@@ -80,14 +80,14 @@ class ProjectTests(unittest.TestCase):
     def test_project_metadata_is_valid(self) -> None:
         project = load_project(REPO_ROOT / "About" / "About.xml")
         self.assertEqual(project.package_name, "SmallCELoadingBench")
-        self.assertEqual(project.version, "0.1.3")
+        self.assertEqual(project.version, "0.1.4")
         self.assertEqual(project.supported_versions, ("1.6",))
 
     def test_prerelease_version_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             metadata = Path(temporary) / "About.xml"
             text = (REPO_ROOT / "About" / "About.xml").read_text(encoding="utf-8")
-            metadata.write_text(text.replace("0.1.3", "0.1.3-rc.1"), encoding="utf-8")
+            metadata.write_text(text.replace("0.1.4", "0.1.4-rc.1"), encoding="utf-8")
             with self.assertRaisesRegex(ProjectError, "MAJOR.MINOR.PATCH"):
                 load_project(metadata)
 
@@ -218,6 +218,17 @@ class ModValidatorTests(unittest.TestCase):
             with (texture_target / "LoadingBench.png").open("ab") as texture:
                 texture.write(b"drift")
             with self.assertRaisesRegex(ModValidationError, "approved runtime artwork bytes changed"):
+                mod_validator.validate_mod(package)
+
+    def test_workshop_publication_identity_drift_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "Package"
+            shutil.copytree(REPO_ROOT / "Patches", package / "Patches")
+            shutil.copytree(REPO_ROOT / "Textures", package / "Textures")
+            published_id = package / "About" / "PublishedFileId.txt"
+            published_id.parent.mkdir(parents=True)
+            published_id.write_text("123456789\n", encoding="ascii")
+            with self.assertRaisesRegex(ModValidationError, "Workshop publication identity has drifted"):
                 mod_validator.validate_mod(package)
 
 

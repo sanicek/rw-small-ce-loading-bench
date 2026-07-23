@@ -48,6 +48,32 @@ intentionally a blank base for adding project-specific tools. rw-art's
 `reference-assets/generic-cube-workbench-1x1/ThingDef.xml` records the complete
 RimWorld XML setup used for its accepted in-game appearance.
 
+## About-page preview
+
+The mod information page uses a deterministic title card rather than generated
+art. Its `1234x500` RGB canvas follows RimWorld's recommended `2.468:1` preview
+ratio. The background is pure black, the exact mod name is centered at the top
+in white DejaVu Sans Condensed Bold, and the accepted runtime texture is centered
+below it at `256x256` with nearest-neighbor scaling. The texture's primary mask
+channel is composited with the documented steel approximation `(160,178,181)`.
+Combat Extended's canonical `300x100` compatibility badge is placed unscaled in
+the lower-left corner with a 32-pixel margin.
+
+The title font is identified by SHA-256
+`586556501565e46ad356a5efcc2f6e81375230323ad5a2a1c4cc8211a6c5ef2e`.
+Compose and intake the review candidate through the repository wrapper; do not
+write directly to `About/Preview.png`:
+
+```bash
+./scripts/artwork.sh preview /path/to/CombatExtended/Media/Badge_CE_compatible.png \
+  /tmp/opencode/small-ce-loading-bench-preview.png
+./scripts/artwork.sh intake about-preview /tmp/opencode/small-ce-loading-bench-preview.png
+```
+
+After visual approval, promote it with `./scripts/artwork.sh approve
+about-preview`. The approved `About/Preview.png` SHA-256 is
+`57677ec9a073beaf695dee96e0a673d6a6dc9cc4543cbbeb616d54a886894615`.
+
 ## Loading-bench artwork
 
 The release artwork composites the second concept in the top row of the

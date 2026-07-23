@@ -12,7 +12,7 @@ if [[ ! -f "$pipeline_dir/rw_art_pipeline/__main__.py" ]]; then
     exit 1
 fi
 if [[ $# -lt 1 ]]; then
-    printf 'Usage: %s {templates|prototype|prompt|auth|models|generate|select|intake|approve|reject|validate} [arguments...]\n' "$0" >&2
+    printf 'Usage: %s {templates|prototype|preview|prompt|auth|models|generate|select|intake|approve|reject|validate} [arguments...]\n' "$0" >&2
     exit 2
 fi
 
@@ -23,5 +23,8 @@ if [[ "$1" == "templates" ]]; then
 fi
 if [[ "$1" == "prototype" ]]; then
     exec python3 -P "$repo_root/scripts/compose-loading-bench-prototype.py" "${@:2}"
+fi
+if [[ "$1" == "preview" ]]; then
+    exec python3 -P "$repo_root/scripts/compose-about-preview.py" "${@:2}"
 fi
 PYTHONPATH="$pipeline_dir" exec python3 -P -m rw_art_pipeline "${global_args[@]}" "$1" "$manifest" "${@:2}"

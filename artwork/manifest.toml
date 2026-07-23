@@ -24,3 +24,28 @@ Use rw-art's provider-independent sanicek-s-logo template, rimworld-mod-icon
 variant, as the exact Small CE Loading Bench mod icon. Preserve its transparent
 background and canonical bytes rather than regenerating or recomposing it.
 """
+
+[[requests]]
+id = "about-preview"
+title = "Small CE Loading Bench about preview"
+width = 1234
+height = 500
+occupied_fraction = 1.0
+alpha_required = false
+background_removal = "none"
+fit = "contain"
+output_mode = "RGB"
+accent_saturation_min = 0.0
+outputs = [
+  { path = "About/Preview.png" },
+]
+prompt = """
+Compose the deterministic about-page title card through scripts/artwork.sh:
+pure black 1234x500 background, the exact mod name in white DejaVu Sans
+Condensed Bold at the top, and the accepted loading-bench runtime texture in
+the middle. Apply its CutoutComplex red mask with steel RGB (160,178,181), then
+scale the 128x128 texture to 256x256 with nearest-neighbor sampling. Do not add
+shadows, borders, gradients, or other decoration. Place the canonical unscaled
+300x100 Combat Extended compatibility badge 32 pixels from the left edge and 32
+pixels from the bottom edge.
+"""

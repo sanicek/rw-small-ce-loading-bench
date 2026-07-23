@@ -38,6 +38,7 @@ source_validator = script_module("validate_source", "validate-source.py")
 SourceError = source_validator.SourceError
 mod_validator = script_module("validate_mod", "validate-mod.py")
 ModValidationError = mod_validator.ModValidationError
+preview_composer = script_module("compose_about_preview", "compose-about-preview.py")
 
 
 class PackageFixture:
@@ -79,14 +80,14 @@ class ProjectTests(unittest.TestCase):
     def test_project_metadata_is_valid(self) -> None:
         project = load_project(REPO_ROOT / "About" / "About.xml")
         self.assertEqual(project.package_name, "SmallCELoadingBench")
-        self.assertEqual(project.version, "0.1.1")
+        self.assertEqual(project.version, "0.1.2")
         self.assertEqual(project.supported_versions, ("1.6",))
 
     def test_prerelease_version_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             metadata = Path(temporary) / "About.xml"
             text = (REPO_ROOT / "About" / "About.xml").read_text(encoding="utf-8")
-            metadata.write_text(text.replace("0.1.1", "0.1.1-rc.1"), encoding="utf-8")
+            metadata.write_text(text.replace("0.1.2", "0.1.2-rc.1"), encoding="utf-8")
             with self.assertRaisesRegex(ProjectError, "MAJOR.MINOR.PATCH"):
                 load_project(metadata)
 
@@ -220,6 +221,36 @@ class ModValidatorTests(unittest.TestCase):
                 mod_validator.validate_mod(package)
 
 
+class AboutPreviewArtworkTests(unittest.TestCase):
+    def test_preview_uses_the_documented_layout_and_sources(self) -> None:
+        texture_path = REPO_ROOT / "Textures/Things/Building/SmallCELoadingBench/LoadingBench.png"
+        mask_path = texture_path.with_name("LoadingBench_m.png")
+        font_path = preview_composer.default_font()
+        preview_composer.require_source(texture_path, preview_composer.TEXTURE_SHA256, "texture")
+        preview_composer.require_source(mask_path, preview_composer.MASK_SHA256, "mask")
+        preview_composer.require_source(font_path, preview_composer.FONT_SHA256, "font")
+        badge = Image.new("RGBA", (300, 100), "white")
+
+        with Image.open(texture_path) as texture, Image.open(mask_path) as mask:
+            preview = preview_composer.compose_preview(texture, mask, badge, font_path)
+
+        self.assertEqual((1234, 500), preview.size)
+        self.assertEqual("RGB", preview.mode)
+        self.assertEqual((0, 0, 0), preview.getpixel((0, 0)))
+        self.assertIsNotNone(preview.crop((0, 20, 1234, 120)).getbbox())
+        self.assertIsNotNone(preview.crop((489, 205, 745, 461)).getbbox())
+        self.assertEqual((255, 255, 255), preview.getpixel((32, 368)))
+        self.assertIsNone(preview.crop((0, 160, 400, 350)).getbbox())
+
+    def test_preview_recolor_uses_partial_red_mask_values(self) -> None:
+        texture = Image.new("RGBA", (1, 1), (200, 180, 160, 255))
+        mask = Image.new("RGBA", (1, 1), (128, 0, 0, 255))
+
+        recolored = preview_composer.recolor(texture, mask, preview_composer.STEEL)
+
+        self.assertEqual((162, 153, 137, 255), recolored.getpixel((0, 0)))
+
+
 class PrototypeArtworkTests(unittest.TestCase):
     def test_compositor_preserves_base_and_mutes_fixture(self) -> None:
         composer = script_module("compose_loading_bench_prototype", "compose-loading-bench-prototype.py")
@@ -327,7 +358,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 .replace("SmallCELoadingBench", "FixtureMod"),
                 encoding="utf-8",
             )
-            shutil.copyfile(repo / "docs" / "releases" / "EXAMPLE.md", repo / "docs" / "releases" / "0.1.1.md")
+            shutil.copyfile(repo / "docs" / "releases" / "EXAMPLE.md", repo / "docs" / "releases" / "0.1.2.md")
             subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
             subprocess.run(["git", "add", "."], cwd=repo, check=True)
             subprocess.run(
@@ -338,7 +369,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
             command = [sys.executable, repo / "scripts" / "package-release.py"]
             subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
-            archive = repo / "artifacts" / "releases" / "FixtureMod-v0.1.1.zip"
+            archive = repo / "artifacts" / "releases" / "FixtureMod-v0.1.2.zip"
             first = archive.read_bytes()
             subprocess.run(command, cwd=repo, check=True, capture_output=True, text=True)
             self.assertEqual(first, archive.read_bytes())
@@ -423,7 +454,7 @@ class SourceTests(unittest.TestCase):
     def test_release_requires_a_version_record(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repo = self.copy_repository(Path(temporary))
-            (repo / "docs" / "releases" / "0.1.1.md").unlink()
+            (repo / "docs" / "releases" / "0.1.2.md").unlink()
             with self.assertRaisesRegex(SourceError, "release record is required"):
                 source_validator.validate_source(repo, release=True)
 

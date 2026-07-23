@@ -13,6 +13,7 @@ from pathlib import Path
 
 PATCH_PATH = Path("Patches/SmallCELoadingBench/AmmoBench.xml")
 TEXTURE_ROOT = Path("Textures/Things/Building/SmallCELoadingBench")
+PUBLISHED_FILE_ID = "3770434354"
 EXPECTED_OPERATIONS = (
     ("PatchOperationReplace", 'Defs/ThingDef[defName="AmmoBench"]/size', (("size", "(1,1)"),)),
     (
@@ -102,6 +103,12 @@ def validate_mod(package: Path) -> None:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         require(digest == EXPECTED_TEXTURE_HASHES[path.name], f"approved runtime artwork bytes changed: {path}")
     require(texture.read_bytes() != mask.read_bytes(), "diffuse texture and recolor mask must differ")
+    published_id = package / "About" / "PublishedFileId.txt"
+    try:
+        actual_id = published_id.read_text(encoding="ascii").strip()
+    except OSError as error:
+        raise ModValidationError(f"cannot read Workshop publication identity {published_id}: {error}") from error
+    require(actual_id == PUBLISHED_FILE_ID, "Workshop publication identity has drifted")
 
 
 def main() -> None:

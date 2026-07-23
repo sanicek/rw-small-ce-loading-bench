@@ -1,74 +1,103 @@
 # Small CE Loading Bench
 
+![Small CE Loading Bench preview](About/Preview.png)
+
 Small CE Loading Bench is a RimWorld 1.6 compatibility mod that reduces Combat
-Extended's loading bench from a 3x1 footprint to a compact 1x1 footprint without
-replacing the bench or changing its recipes.
+Extended's loading bench from a 3x1 footprint to a compact 1x1 workstation. It
+patches the existing bench rather than adding a replacement, so its normal
+recipes, bills, research requirement, and work-giver integration remain intact.
 
-## Behavior
+## Features
 
-- Adjust Combat Extended's existing `AmmoBench` through a declarative XML patch.
-- Preserve the original Def identity, recipes, bills, research requirement, and
-  work-giver integration.
-- Keep one fixed-perspective graphic while allowing placement rotation to move
-  the interaction spot to any side.
-- Avoid C# and Harmony unless engine-native patching proves insufficient.
+- Reduces Combat Extended's existing loading bench from 3x1 to 1x1.
+- Preserves the original Def identity, recipes, bills, costs, research, and
+  related mod references.
+- Allows placement rotation to move the interaction spot to any side while the
+  fixed-perspective graphic remains visually consistent.
+- Uses RimWorld's normal stuff-color system, including the steel appearance
+  shown in the preview.
+- Uses a declarative XML patch with no C# or Harmony runtime dependency.
 
 ## Requirements
 
 - RimWorld 1.6
-- [Combat Extended](https://github.com/CombatExtended-Continued/CombatExtended)
+- [Combat Extended](https://steamcommunity.com/sharedfiles/filedetails/?id=2890901044)
 
-## Package Layout
+The mod metadata declares Combat Extended as required and loads Small CE Loading
+Bench after it. RimWorld's automatic mod sorting should establish the correct
+order.
 
-- `About/`, `Patches/`, and `Textures/` are maintained game content.
-- `scripts/build.sh` recreates `artifacts/<package-name>` from an allowlist.
-- `scripts/validate-package.py` checks generic package contracts.
-- `scaffolds/csharp/` is excluded from packages until copied to root `Source/`.
-- `artwork/` owns prompts and output contracts; raw generations remain outside
-  Git.
-- `docs/releases/` records exact release candidates and smoke-test acceptance.
+## Installation
 
-## Build And Install
+Download the versioned ZIP from
+[GitHub Releases](https://github.com/sanicek/rw-small-ce-loading-bench/releases).
+Extract its `SmallCELoadingBench` directory into RimWorld's `Mods` directory,
+then enable it in the mod manager. The attached ZIP is the supported manual
+download; GitHub's automatically generated source archives are not installable
+RimWorld mod packages.
 
-An XML-only build needs Bash and Python 3.11 or newer:
+## Compatibility
+
+Existing Combat Extended loading benches become one-cell buildings while this
+mod is enabled. Their Def identity is unchanged, so existing bills and recipes
+remain attached.
+
+Mods that also patch Combat Extended's `AmmoBench` footprint, graphic class,
+texture, draw size, or rotation behavior may conflict. Mods that only add or
+alter recipes should generally continue to use the same bench identity.
+
+## Problems and Logs
+
+Reports are welcome through
+[GitHub Issues](https://github.com/sanicek/rw-small-ce-loading-bench/issues).
+Include the RimWorld, Combat Extended, and Small CE Loading Bench versions; a
+short reproduction sequence; the active mod list and load order; and a link to
+the relevant `Player.log`. Upload the log to a paste or file-sharing service
+rather than pasting the complete file into an issue.
+
+## Building and Local Installation
+
+An XML-only build requires Bash and Python 3.11 or newer:
 
 ```bash
-scripts/test.sh
-scripts/build.sh
-scripts/install-local.sh
+./scripts/test.sh
+./scripts/build.sh
+./scripts/install-local.sh
 ```
 
 `install-local.sh` defaults to
-`~/.local/share/Steam/steamapps/common/RimWorld`. Set `RIMWORLD_DIR` for another
-installation. It stages and validates the replacement before moving the current
-installed mod, and restores the prior directory if installation fails.
+`~/.local/share/Steam/steamapps/common/RimWorld`. Set `RIMWORLD_DIR` to target a
+different installation. It stages and validates the replacement before moving
+the current installed mod and restores the prior directory if installation
+fails.
 
-The optional C# scaffold additionally requires the .NET SDK and RimWorld's
-managed assemblies. Follow `scaffolds/csharp/README.md` to opt in.
+The optional C# scaffold is inactive and excluded from packages. Follow
+[`scaffolds/csharp/README.md`](scaffolds/csharp/README.md) only if a future,
+explicitly approved feature cannot remain declarative.
 
-## Dependency
+## Maintainer Documentation
 
-`About/About.xml` declares Combat Extended as required and loads this mod after
-it. Development uses the configured `CombatExtended` checkout as a source
-reference; no dependency files are redistributed.
+- [Design and compatibility contracts](docs/DESIGN.md)
+- [Release policy and records](docs/RELEASES.md)
+- [Artwork provenance and approval](artwork/README.md)
+- [Repository workflow](AGENTS.md)
 
-## Releases
+`About/About.xml` is the single source for the release version. The build copies
+only allowlisted runtime content into `artifacts/`, and every release is packaged
+deterministically, installed from its checksum-verified ZIP, and smoke-tested
+before publication. Repository-only documentation changes do not require a mod
+version increment when package output remains unchanged.
 
-`About/About.xml` `modVersion` is the single release version. Compatible fixes
-increment PATCH, backward-compatible features increment MINOR, and intentional
-save, settings, Def identity, or supported-version breaks increment MAJOR.
+## Artwork, License, and AI Assistance
 
-See `docs/RELEASES.md` for the local release-candidate, checksum, smoke-test,
-merge, tag, and GitHub release workflow. Hosted CI/CD is intentionally absent.
+Small CE Loading Bench's original code and artwork are available under the
+[MIT License](LICENSE). The preview incorporates Combat Extended's official
+third-party compatibility badge from the
+[CE media pack](https://github.com/CombatExtended-Continued/CombatExtended/tree/Development/Media),
+which remains under
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). See the
+[third-party notice](THIRD_PARTY_NOTICES.md) for its pinned source and the
+compositing performed for the preview.
 
-## Artwork
-
-See `artwork/README.md`. Paid generation always requires a dry-run cost estimate
-and explicit approval, followed by explicit user selection from the configured
-candidate sheet. Only approved game-ready PNGs enter the tracked package tree.
-
-## License
-
-Small CE Loading Bench and the included Sanicek maker badge are available under
-the MIT license. Add `THIRD_PARTY_NOTICES.md` whenever redistributed content
-requires attribution or carries a different license.
+Parts of the code, documentation, artwork, and maintenance used AI-tool
+assistance. Published changes are reviewed and tested by the maintainer.
